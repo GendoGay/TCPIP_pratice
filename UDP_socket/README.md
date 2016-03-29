@@ -1,11 +1,11 @@
 
-##Handout
+#Handout
 
 Name: TungYu Young
 StudentID: 7104056022
 
 
-#funtion in use
+##funtion in use
 
 1.socket() etc for connetion
 2.gettimeofday() for Time interval
