@@ -29,7 +29,9 @@ int main(int argc, char *argv[]) {
     address.sin_port = htons(atoi(argv[2]));
     address.sin_addr.s_addr = inet_addr(argv[1]);
     int address_length = sizeof(address);
-         
+    
+    
+    
     /* clock start */
     gettimeofday(&start_t,NULL);
     start_sec = (double)start_t.tv_sec + (double)start_t.tv_usec / 1000000;
