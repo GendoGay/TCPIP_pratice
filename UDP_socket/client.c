@@ -10,7 +10,7 @@
 
 #define Server_PortNumber 1235
 #define Server_Address "127.0.0.1"
-#define DATAGRAM_NUM 279
+#define DATAGRAM_NUM 30
 
 int main(int argc, char *argv[]) {
     struct sockaddr_in address;

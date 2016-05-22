@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #define PortNumber 5555
+#define Packet_Num 20
 
 int main(int argc, char *argv[]) {
     struct sockaddr_in server_addr,client_addr;
@@ -23,26 +24,24 @@ int main(int argc, char *argv[]) {
    /*#define INADDR_ANY  ((unsigned long int) 0x00000000) 
       INADDR_ANY allows the server to accept a client connection on any interface, in case the server host has multiple interfaces.*/
 
-    if (bind(sock,(struct sockaddr *)&server_addr, server_addr_length) == -1) {
-        printf("error binding!\n");
-        close(sock);}
+	if (bind(sock,(struct sockaddr *)&server_addr, server_addr_length) == -1) {
+		printf("error binding!\n");
+		close(sock);}
 
-    if (listen(sock, 20) == -1) {
-        printf("listen failed!\n");
-        close(sock);}
-
-    for (i=0;i<3;i++) {
-
-    if((recfd = accept(sock,(struct sockaddr *)&client_addr,&client_addr_length))==-1) {
-        printf("accept failed!\n");
-        close(sock);
-    }
-
-    byte_recv = recv(recfd, buffer, sizeof(buffer),0);
-    if (byte_recv < 0)    printf("Error recving packet\n");
-    printf("data: %s\n",buffer);
-
-  }
-
+	if (listen(sock, 20) == -1) {
+		printf("listen failed!\n");
+		close(sock);}
+	if((recfd = accept(sock,(struct sockaddr *)&client_addr,&client_addr_length))==-1) 		{
+		printf("accept failed!\n");
+		close(sock);
+	} else {
+		for (i=0;i<Packet_Num;i++) {
+			byte_recv = recv(recfd, buffer, sizeof(buffer),0);
+			if (byte_recv < 0)	printf("Error recving packet\n");
+			else			printf("data: %s\n",buffer);
+		
+		}	
+	}
+	close(sock);
 }
 

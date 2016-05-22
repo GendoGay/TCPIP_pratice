@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 #include <sys/time.h> // gettimeofday func
 #define PortNumber 1234
-#define DATAGRAM_NUM 279
+#define DATAGRAM_NUM 30
 
 int main(int argc, char *argv[]) {
     struct sockaddr_in address;
