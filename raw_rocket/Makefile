@@ -1,5 +1,5 @@
 CC ?= gcc
-CFLAGS_commom ?= -Wall -std=gun99
+CFLAGS_commom ?= -Wall -g
 CFLAGS_opt = -O0
 
 EXEC = raw_socket udp_cap tcp_cap
