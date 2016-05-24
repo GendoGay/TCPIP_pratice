@@ -11,6 +11,7 @@
 #include <netinet/ip.h>
 #include <netinet/if_ether.h>
 
+
 #define	IFF_PROMISC  0x100  /*receive all packets */
 
 
@@ -48,7 +49,6 @@ int main(int argc, char *argv[])
 	ifr.ifr_flags|=IFF_PROMISC;
 	ioctl(fd,SIOCSIFFLAGS,&ifr);
 
-	//recvfrom(fd, buffer, ETH_FRAME_LEN, 0, NULL, NULL);
 	for(;;)
 	{	
 		if(recvfrom(fd, buffer, ETH_FRAME_LEN, 0, NULL, NULL) > 0)
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 					break;
 			}	
 			ptemp += sizeof(struct ether_header);
-			pip = (struct ip *)ptemp;
+			pip = (struct iphdr *)ptemp;
 			switch(pip->protocol)
 			{
 				case IPPROTO_TCP:
@@ -91,11 +91,19 @@ int main(int argc, char *argv[])
 					break;
 			}
 		}
-		if(counter == 200)
+		if(counter == 100)
 			break;
 	}
-	printf("------statistics------\nIP\t:%d \nARP\t:%d \nRARP\t:%d \nTCP\t:%d \nUDP\t:%d \nICMP\t:%d \nIGMP\t:%d \n-----finish-----\n", ip_counter, arp_counter, rarp_counter, tcp_counter, udp_counter,  icmp_counter, igmp_counter);
-	
+	// output result
+	printf("------statistics------\n");
+	printf("IP\t:%d \n", ip_counter);
+	printf("ARP\t:%d \n", arp_counter);
+	printf("RARP\t:%d \n", rarp_counter);
+	printf("TCP\t:%d \n", tcp_counter);
+	printf("UDP\t:%d \n", udp_counter);
+	printf("ICMP\t:%d \n",  icmp_counter);
+	printf("IGMP\t:%d \n", igmp_counter);
+	printf("-----finish-----\n");
 	// before program terminated, remember to restore NIC’s flag
 	ifr.ifr_flags&=~IFF_PROMISC;
 	close(fd);
