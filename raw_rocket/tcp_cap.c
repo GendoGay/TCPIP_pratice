@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 
 					// filter
 					//if(strcmp(ip_dadd, MY_HOST)  && strcmp(ip_dadd, DEFAULT))
-					if(!strcmp(my_add, ip_sadd) && !strcmp(my_add, ip_dadd))
+					if(!strcmp(my_add, ip_sadd) )
 					{
 						counter = counter + 1;
 						printf("Source MAC address\t: %02x:%02x:%02x:%02x:%02x:%02x\n", peth->ether_shost[0], peth->ether_shost[1], peth->ether_shost[2], peth->ether_shost[3], peth->ether_shost[4], peth->ether_shost[5]);
@@ -84,8 +84,8 @@ int main(int argc, char *argv[])
 						printf("protocol\t: %d\n", pip->protocol);
 						printf("source ip\t: %s\n", ip_sadd);
 						printf("destination ip\t: %s\n", ip_dadd);
-						printf("source port\t: %d\n", ptcp->th_sport); // port can't match
-						printf("destination port: %d\n\n", ptcp->th_dport);
+						printf("source port\t: %d\n", ntohs(ptcp->th_sport)); // port can't match
+						printf("destination port: %d\n\n", ntohs(ptcp->th_dport));
 					}
 				}
 			}
