@@ -52,10 +52,12 @@ int main(int argc, char* argv[])
 	struct icmp* icmp_hdr;
 	struct sockaddr_in server_addr;
 	int sock, data_len = DEFAULT_DLENTH, pack_len;
-	//char *recv_buf = NULL;
-	//unsigned short *recv_buf=NULL;
-	//u_short *recv_buf = NULL;
-	u_char send_buf[MAX_PACKET], recv_buf[MAX_PACKET]; // need allocate memory
+	//char *recv_buf = NULL; (X)
+	//unsigned short *recv_buf=NULL; (X)
+	//u_short *recv_buf = NULL; (X)
+	// ***need allocate memory, thus we shouldn't just define this varialbe as a pointer
+	u_char send_buf[MAX_PACKET], recv_buf[MAX_PACKET]; 
+
 	struct timeval tvori, tvback;
 	long tsori, tsrecv, tstran, tsback, RTT;
 
@@ -92,11 +94,13 @@ int main(int argc, char* argv[])
 	// compute check-sum
 	icmp_hdr->icmp_cksum = cal_cksum((u_short *)icmp_hdr, pack_len);
 
+	// send packet
 	if(sendto(sock, (char *)send_buf, pack_len, 0, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
 	{
 		perror("sendto error");
 	}
 
+	// long (+ int) => %lu ; icmp_time(uint32_t) => %u 
 	printf("icmp_type = %d, icmp_code = %d\n", (int)icmp_hdr->icmp_type, (int)icmp_hdr->icmp_code);
 	printf("Original timestamp = %u\n",ntohl(icmp_hdr->icmp_otime));
 	printf("Receive timestamp  = %u\n",ntohl(icmp_hdr->icmp_rtime));
@@ -108,6 +112,7 @@ int main(int argc, char* argv[])
 	int errno;
 	//pack_len = data_len + MAX_IP_LEN + MAX_ICMP_LEN;
 
+		// receive packet
 	errno = recvfrom(sock, recv_buf, sizeof(recv_buf), 0, NULL, NULL);
 	if(errno < 0)
 	{
@@ -120,21 +125,24 @@ int main(int argc, char* argv[])
 		struct ip *ip_hdr;
 		struct icmp *icmp_hdr_recv; // skip ip header
 
+		// catch and skip the part of ip header
 		ip_hdr = (struct ip *)recv_buf;
 		hlen = ip_hdr->ip_hl << 2;
 
 		icmp_hdr_recv = (struct icmp *)(recv_buf + hlen);
 
+		// timestamp only
 		if(icmp_hdr_recv->icmp_type == ICMP_TSTAMPREPLY)
 		{
 			if (ntohl(icmp_hdr_recv->icmp_otime) != tsori)
 				printf("originate timestamp not echoed: sent %lu, received %u\n",tsori, ntohl(icmp_hdr_recv->icmp_otime));
 
-			gettimeofday(&tvback, NULL); // get time now
+			//calculate round trip time
+			gettimeofday(&tvback, NULL);//get final timestamp
 			tsback = (tvback.tv_sec % (24*60*60)) *1000 + tvback.tv_usec / 1000;
 			tsrecv = ntohl(icmp_hdr_recv->icmp_rtime); // get receive timestamp
 			tstran = ntohl(icmp_hdr_recv->icmp_ttime); // get transimit timestamp
-			//tsdiff = tsrecv - tsori; // in millisec
+
 			RTT = ( tsback - tstran)+( tsrecv - tsori);
 			printf("icmp_type = %d, icmp_code = %d\n", (int)icmp_hdr_recv->icmp_type, (int)icmp_hdr_recv->icmp_code);
 			printf("Original timestamp = %u\n", ntohl(icmp_hdr_recv->icmp_otime));
@@ -142,7 +150,7 @@ int main(int argc, char* argv[])
 			printf("Transmit timestamp = %lu\n", tstran);
 			printf("Final timestamp = %lu\n", tsback);
 
-			printf("RTT: %zu = (%zu - %zu) + (%zu - %zu)\n",RTT, tsback, tstran, tsrecv, tsori);
+			printf("RTT: %lu = (%zu - %lu) + (%lu - %lu)\n",RTT, tsback, tstran, tsrecv, tsori);
 		}
 	}
 
