@@ -1,4 +1,3 @@
-#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -6,7 +5,7 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include <sys/ioctl.h>
+#include <errno.h>
 
 #include <unistd.h>
 
@@ -18,8 +17,8 @@
 #define DEFAULT_DLENTH 12
 #define MAX_IP_LEN 60
 #define MAX_ICMP_LEN 76
-#define SERVER_IP "196.168.0.1"
-#define	MAX_PACKET (65536 - 60 - 8)/* max packet size */
+#define SERVER_IP "140.120.1.20"
+#define	MAX_PACKET (65536-60-8)/* max packet size */
 
 unsigned short cal_cksum(u_short * addr, int len)
 {
@@ -54,10 +53,11 @@ int main(int argc, char* argv[])
 	struct sockaddr_in server_addr;
 	int sock, data_len = DEFAULT_DLENTH, pack_len;
 	//char *recv_buf = NULL;
-	u_char *recv_buf;
-	u_char send_buf[MAX_PACKET];
+	//unsigned short *recv_buf=NULL;
+	//u_short *recv_buf = NULL;
+	u_char send_buf[MAX_PACKET], recv_buf[MAX_PACKET]; // need allocate memory
 	struct timeval tvori, tvback;
-	long tsori, tsrecv, tstran, tsback, tsdiff, RTT;
+	long tsori, tsrecv, tstran, tsback, RTT;
 
 
 	// set server IP
@@ -96,28 +96,26 @@ int main(int argc, char* argv[])
 	{
 		perror("sendto error");
 	}
+
 	printf("icmp_type = %d, icmp_code = %d\n", (int)icmp_hdr->icmp_type, (int)icmp_hdr->icmp_code);
-	printf("Original timestamp = %lu\n",ntohl(icmp_hdr->icmp_otime));
-	printf("Receive timestamp  = %lu\n",ntohl(icmp_hdr->icmp_rtime));
-	printf("Transmit timestamp = %lu\n",ntohl(icmp_hdr->icmp_ttime));
-	printf("======\n");
+	printf("Original timestamp = %u\n",ntohl(icmp_hdr->icmp_otime));
+	printf("Receive timestamp  = %u\n",ntohl(icmp_hdr->icmp_rtime));
+	printf("Transmit timestamp = %u\n",ntohl(icmp_hdr->icmp_ttime));
+	printf("=======================================\n");
 
 	// in pack_len
 
-	struct sockaddr_in from;
-	int fromlen, errno;
-	pack_len = data_len + MAX_IP_LEN + MAX_ICMP_LEN;
-	errno = recvfrom(sock, (char *)recv_buf, strlen(recv_buf), 0, NULL, NULL);
+	int errno;
+	//pack_len = data_len + MAX_IP_LEN + MAX_ICMP_LEN;
 
-	printf("errno: %d\n",errno);
+	errno = recvfrom(sock, recv_buf, sizeof(recv_buf), 0, NULL, NULL);
 	if(errno < 0)
 	{
-		perror("recvfrom error");
+		if(errno != EINTR)
+			perror("recvfrom error");
 	}
 	else
 	{
-		if(recv_buf!= NULL)
-			printf("AAAA\n");
 		int hlen;
 		struct ip *ip_hdr;
 		struct icmp *icmp_hdr_recv; // skip ip header
@@ -130,16 +128,21 @@ int main(int argc, char* argv[])
 		if(icmp_hdr_recv->icmp_type == ICMP_TSTAMPREPLY)
 		{
 			if (ntohl(icmp_hdr_recv->icmp_otime) != tsori)
-				printf("originate timestamp not echoed: sent %lu, received %lu\n",tsori, ntohl(icmp_hdr_recv->icmp_otime));
+				printf("originate timestamp not echoed: sent %lu, received %u\n",tsori, ntohl(icmp_hdr_recv->icmp_otime));
 
 			gettimeofday(&tvback, NULL); // get time now
 			tsback = (tvback.tv_sec % (24*60*60)) *1000 + tvback.tv_usec / 1000;
 			tsrecv = ntohl(icmp_hdr_recv->icmp_rtime); // get receive timestamp
 			tstran = ntohl(icmp_hdr_recv->icmp_ttime); // get transimit timestamp
-			tsdiff = tsrecv - tsori; // in millisec
+			//tsdiff = tsrecv - tsori; // in millisec
 			RTT = ( tsback - tstran)+( tsrecv - tsori);
+			printf("icmp_type = %d, icmp_code = %d\n", (int)icmp_hdr_recv->icmp_type, (int)icmp_hdr_recv->icmp_code);
+			printf("Original timestamp = %u\n", ntohl(icmp_hdr_recv->icmp_otime));
+			printf("Receive timestamp  = %lu\n", tsrecv);
+			printf("Transmit timestamp = %lu\n", tstran);
+			printf("Final timestamp = %lu\n", tsback);
 
-			printf("RTT: %lu = (%lu - %lu) + (%lu - %lu)\n",RTT, tsback, tstran, tsrecv, tsori);
+			printf("RTT: %zu = (%zu - %zu) + (%zu - %zu)\n",RTT, tsback, tstran, tsrecv, tsori);
 		}
 	}
 
